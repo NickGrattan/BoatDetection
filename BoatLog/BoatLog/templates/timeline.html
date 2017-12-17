@@ -1,0 +1,84 @@
+﻿{% extends "layout.html" %}
+
+{% block content %}
+
+<style type="text/css">
+    a:hover {
+        cursor: pointer;
+    }
+</style>
+
+<form method='POST' action={{ url_for('timeline')}}>
+    Log Dates:
+    {% for d in alldates%}
+    <input type="submit" value="{{ d }}" name="btn" style="width: 100px; height: 30px;" />
+    {% endfor %}
+    <br />
+    <h2 id="frametitle"></h2>
+    <a onclick="refreshframe(+100000)">Current</a>&nbsp;&nbsp;
+    <a onclick="refreshframe(-10)">Prev-10</a>&nbsp;&nbsp;
+    <a onclick="refreshframe(-1)">Prev</a>&nbsp;&nbsp;
+    <a onclick="refreshframe(+1)">Next</a>&nbsp;&nbsp;
+    <a onclick="refreshframe(+10)">Next+10</a>&nbsp;&nbsp;
+
+
+    <script type='text/javascript'>
+
+        $(document).ready(function () {
+            initframenumber({{currentframe | safe}})
+            getboats()
+        });
+
+        function initframenumber(newcurrentframe)
+        {
+            currentframe = newcurrentframe
+        }
+
+        function refreshframe(delta) {
+            initframenumber(currentframe + delta)
+            getboats()
+            return false;
+        }
+
+        function getboats() {
+            $.getJSON('/framestatus', {
+                framenum: currentframe,
+            }, function(data) {
+                numboats = data.numboats;
+                timestamp = data.timestamp;
+                currentframe = data.framenumber;
+                $("#frameimg").attr("src", "./get_viewimage?type=-1&currentframe=" + currentframe)
+                $("#maskimg").attr("src", "./get_viewimage?type=-2&currentframe=" + currentframe)
+                $('#frametitle').text("Time: " + timestamp +" FrameNum: " + currentframe + " Number Boats: " + numboats)
+                $('#boatimgs').empty()
+                for (i = 0;i < numboats; i++){
+                    $('#boatimgs').append('<br />Boat ' + i + ':')
+                    $('#boatimgs').append('<img src="./get_viewimage?type=' + i + '&currentframe=' + currentframe + '" /><br/>')
+                }
+                $('#framehistory').html(data.history)
+            });
+        }
+
+    </script>
+
+    <table>
+        <tr>
+            <td><img id="frameimg" src="./get_viewimage?type=-1&currentframe={{currentframe}}" /></td>
+            <td valign="top">
+                <div id="boatimgs">
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <h2>History:</h2>
+    <div id="framehistory"></div>
+
+    <!--<h2>Masked Image:</h2>
+    <table>
+        <tr>
+            <td><img id="maskimg" src="./get_viewimage?type=-1&currentframe={{currentframe}}" /></td>
+        </tr>
+    </table>-->
+</form>
+{% endblock %}
